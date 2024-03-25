@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"example.com/rest-api/db"
@@ -13,13 +14,19 @@ func main() {
 	server := gin.Default()
 
 	server.GET("/events", getEvents)
+	server.GET("/events/:id", getEvents)
 	server.POST("/events", createEvent)
 
 	server.Run(":8080")
 }
 
 func getEvents(context *gin.Context)  {
-	events := models.GetAllEvents()
+	events, err := models.GetAllEvents()
+	if err != nil {
+		log.Printf("Error retrieving events: %v", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"message" : "Could not retrieve events."})
+		return
+	}
 	context.JSON(http.StatusOK, events)
 }
 
@@ -35,7 +42,12 @@ func createEvent(context *gin.Context)  {
 	event.ID = 1
 	event.UserID = 1
 
-	event.Save()
+	err = event.SaveAndUpdateEvents()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message" : "Could not create event. Try again later."})
+		return
+	}
+
 
 	context.JSON(http.StatusCreated, gin.H{"message": "Event created!", "event": event})
 }
