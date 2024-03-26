@@ -41,7 +41,7 @@ func (u *User) Save() error {
 func (u *User) SaveAndUpdateUsers() error {
 	err := u.Save()
 	if err != nil {
-		log.Printf("Error retrieving event: %v", err)
+		log.Printf("Error saving user: %v", err)
 		return err
 	}
 	users = append(users, *u)
