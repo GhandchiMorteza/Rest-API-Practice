@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"log"
 
 	"example.com/rest-api/db"
@@ -9,7 +10,7 @@ import (
 
 type User struct {
 	ID       int64
-	Name     string `binding:"required"`
+	Name     string
 	Email    string `binding:"required"`
 	Password string `binding:"required"`
 }
@@ -51,5 +52,24 @@ func (u *User) SaveAndUpdateUsers() error {
 		return err
 	}
 	users = append(users, *u)
+	return nil
+}
+
+func (u *User) ValidateCredentials() error {
+	query := "SELECT password FROM users WHERE email = ?"
+	row := db.DB.QueryRow(query, u.Email)
+
+	var retreivedPassword string
+	err := row.Scan(&retreivedPassword)
+	if err != nil {
+		return err
+	}
+
+	passwordIsValid := utils.CheckPasswordHash(u.Password, retreivedPassword)
+
+	if !passwordIsValid {
+		return errors.New("Credentials invalid")
+	}
+
 	return nil
 }
